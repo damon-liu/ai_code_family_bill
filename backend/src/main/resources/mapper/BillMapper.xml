@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.family.bill.mapper.BillMapper">
+
+    <!-- 账单结果映射 -->
+    <resultMap id="BillVOResultMap" type="com.family.bill.vo.BillVO">
+        <id column="id" property="id"/>
+        <result column="payee" property="payee"/>
+        <result column="amount" property="amount"/>
+        <result column="transaction_time" property="transactionTime"/>
+        <result column="payment_method_id" property="paymentMethodId"/>
+        <result column="payment_method_name" property="paymentMethodName"/>
+        <result column="transaction_no" property="transactionNo"/>
+        <result column="category_id" property="categoryId"/>
+        <result column="category_name" property="categoryName"/>
+        <result column="remark" property="remark"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <!-- 分页查询账单列表 -->
+    <select id="selectBillPage" resultMap="BillVOResultMap">
+        SELECT 
+            b.id,
+            b.payee,
+            b.amount,
+            b.transaction_time,
+            b.payment_method_id,
+            pm.name AS payment_method_name,
+            b.transaction_no,
+            b.category_id,
+            bc.name AS category_name,
+            b.remark,
+            b.create_time
+        FROM bill b
+        LEFT JOIN payment_method pm ON b.payment_method_id = pm.id
+        LEFT JOIN bill_category bc ON b.category_id = bc.id
+        <where>
+            <if test="startTime != null">
+                AND b.transaction_time >= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND b.transaction_time &lt;= #{endTime}
+            </if>
+            <if test="paymentMethodId != null">
+                AND b.payment_method_id = #{paymentMethodId}
+            </if>
+            <if test="categoryId != null">
+                AND b.category_id = #{categoryId}
+            </if>
+            <if test="type != null">
+                <if test="type == 1">
+                    AND b.amount &lt; 0
+                </if>
+                <if test="type == 2">
+                    AND b.amount > 0
+                </if>
+            </if>
+        </where>
+        ORDER BY b.transaction_time DESC, b.create_time DESC
+    </select>
+
+    <!-- 统计总收入 -->
+    <select id="selectTotalIncome" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(amount), 0)
+        FROM bill
+        <where>
+            amount > 0
+            <if test="startTime != null">
+                AND transaction_time >= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND transaction_time &lt;= #{endTime}
+            </if>
+        </where>
+    </select>
+
+    <!-- 统计总支出 -->
+    <select id="selectTotalExpense" resultType="java.math.BigDecimal">
+        SELECT COALESCE(ABS(SUM(amount)), 0)
+        FROM bill
+        <where>
+            amount &lt; 0
+            <if test="startTime != null">
+                AND transaction_time >= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND transaction_time &lt;= #{endTime}
+            </if>
+        </where>
+    </select>
+
+    <!-- 按分类统计 -->
+    <select id="selectCategoryStatistics" resultType="com.family.bill.vo.StatisticsVO$CategoryStatistics">
+        SELECT 
+            bc.id AS categoryId,
+            bc.name AS categoryName,
+            COALESCE(SUM(ABS(b.amount)), 0) AS amount,
+            bc.type AS type
+        FROM bill b
+        LEFT JOIN bill_category bc ON b.category_id = bc.id
+        <where>
+            <if test="startTime != null">
+                AND b.transaction_time >= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND b.transaction_time &lt;= #{endTime}
+            </if>
+        </where>
+        GROUP BY bc.id, bc.name, bc.type
+        ORDER BY amount DESC
+    </select>
+
+    <!-- 按支付方式统计 -->
+    <select id="selectPaymentMethodStatistics" resultType="com.family.bill.vo.StatisticsVO$PaymentMethodStatistics">
+        SELECT 
+            pm.id AS paymentMethodId,
+            pm.name AS paymentMethodName,
+            COALESCE(SUM(ABS(b.amount)), 0) AS amount
+        FROM bill b
+        LEFT JOIN payment_method pm ON b.payment_method_id = pm.id
+        <where>
+            <if test="startTime != null">
+                AND b.transaction_time >= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND b.transaction_time &lt;= #{endTime}
+            </if>
+        </where>
+        GROUP BY pm.id, pm.name
+        ORDER BY amount DESC
+    </select>
+
+    <!-- 根据ID查询账单详情 -->
+    <select id="selectBillById" resultMap="BillVOResultMap">
+        SELECT 
+            b.id,
+            b.payee,
+            b.amount,
+            b.transaction_time,
+            b.payment_method_id,
+            pm.name AS payment_method_name,
+            b.transaction_no,
+            b.category_id,
+            bc.name AS category_name,
+            b.remark,
+            b.create_time
+        FROM bill b
+        LEFT JOIN payment_method pm ON b.payment_method_id = pm.id
+        LEFT JOIN bill_category bc ON b.category_id = bc.id
+        WHERE b.id = #{id}
+    </select>
+
+</mapper>
+
