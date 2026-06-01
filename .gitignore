@@ -29,4 +29,7 @@ Thumbs.db
 # Application
 backend/src/main/resources/application-dev.yml
 
+# Claude Code hook runtime state
+.claude/hooks/.state/
+
 
