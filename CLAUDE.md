@@ -69,14 +69,4 @@ family_bill/
 - HTTP客户端: Axios 1.6.0
 - 日期处理: Day.js 1.11.10
 
-## 后端接口"完成"定义（强制）
 
-新增 / 修改 / 重构后端 Java 文件后，由 `.claude/hooks/run-related-tests.sh`（PostToolUse hook）自动定位并运行对应的 JUnit5 测试类：
-
-- 命名约定：`com.x.y.Foo` → `com.x.y.FooTest`
-- 失败反馈：hook 以 exit 2 + stderr 注入 `❌ [auto-test]` 信息到上下文，Claude 必须按 `backend-api-tdd-loop` skill 的步骤 5 修复，直到 hook 不再报错
-- **循环上限**：同一测试类连续失败 ≥3 次时，hook 输出 `🛑` 标记并强制中止循环；Claude 必须立刻停止改代码，改为按 skill 步骤 6 向用户汇报失败原因和可选方案
-- 未找到测试类：hook 输出 `⚠️` 警告，必须立即补写单元测试
-- 禁止行为：删除测试 / 注释 `@Test` / 把测试期望改成符合错误实现的值，让 hook "通过"
-
-只有 hook 真正通过（`✅ [auto-test] ... 通过`），才能向用户汇报接口完成。
