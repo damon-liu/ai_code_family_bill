@@ -26,37 +26,45 @@ import java.time.Duration;
 @EnableCaching
 public class RedisConfig {
     
-    @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        
-        // 使用Jackson2JsonRedisSerializer来序列化和反序列化redis的value值
+    /**
+     * 创建带类型信息的 Jackson2JsonRedisSerializer，确保反序列化时能还原原始类型
+     */
+    private Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer() {
         Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
         ObjectMapper mapper = new ObjectMapper();
         mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
         mapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL);
         serializer.setObjectMapper(mapper);
-        
+        return serializer;
+    }
+
+    @Bean
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+
+        // 使用带类型信息的 Jackson2JsonRedisSerializer
+        Jackson2JsonRedisSerializer<Object> serializer = jackson2JsonRedisSerializer();
+
         // 使用StringRedisSerializer来序列化和反序列化redis的key值
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
         template.setValueSerializer(serializer);
         template.setHashValueSerializer(serializer);
-        
+
         template.afterPropertiesSet();
         return template;
     }
-    
+
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofHours(1)) // 设置缓存过期时间
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(
-                        new Jackson2JsonRedisSerializer<>(Object.class)))
+                        jackson2JsonRedisSerializer()))
                 .disableCachingNullValues();
-        
+
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)
                 .build();
