@@ -49,7 +49,7 @@ public class BillServiceImpl implements BillService {
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    @CacheEvict(value = "bill", allEntries = true)
+    @CacheEvict(value = {"bill", "statistics"}, allEntries = true)
     public Long createBill(BillDTO billDTO) {
         Bill bill = new Bill();
         BeanUtils.copyProperties(billDTO, bill);
@@ -61,7 +61,7 @@ public class BillServiceImpl implements BillService {
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    @CacheEvict(value = "bill", allEntries = true)
+    @CacheEvict(value = {"bill", "statistics"}, allEntries = true)
     public void updateBill(Long id, BillDTO billDTO) {
         Bill bill = billMapper.selectById(id);
         if (bill == null) {
@@ -74,7 +74,7 @@ public class BillServiceImpl implements BillService {
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    @CacheEvict(value = "bill", allEntries = true)
+    @CacheEvict(value = {"bill", "statistics"}, allEntries = true)
     public void deleteBill(Long id) {
         Bill bill = billMapper.selectById(id);
         if (bill == null) {

@@ -1,5 +1,6 @@
 package com.family.bill.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
@@ -34,6 +35,7 @@ public class BillDTO {
      * 交易时间
      */
     @NotNull(message = "交易时间不能为空")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date transactionTime;
     
     /**
